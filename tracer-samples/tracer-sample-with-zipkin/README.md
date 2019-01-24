@@ -48,15 +48,16 @@
 
 ## 配置文件
 
-最后，在工程的 `application.properties` 文件下添加一个 SOFATracer 要使用的参数，包括`spring.application.name` 用于标示当前应用的名称；`logging.path` 用于指定日志的输出目录。
+在工程的 `application.properties` 文件下添加 SOFATracer 要使用的参数，包括`spring.application.name` 用于标示当前应用的名称；`logging.path` 用于指定日志的输出目录。
 
 ```properties
 # Application Name
 spring.application.name=SOFATracerReportZipkin
 # logging path
 logging.path=./logs
-
+#开启数据上报功能
 com.alipay.sofa.tracer.zipkin.enabled=true
+#指定上报的zipkin server 地址
 com.alipay.sofa.tracer.zipkin.baseUrl=http://localhost:9411
 ```
 
@@ -85,7 +86,7 @@ com.alipay.sofa.tracer.zipkin.baseUrl=http://localhost:9411
 
 可以将工程导入到 IDE 中运行生成的工程里面中的 `main` 方法（一般上在 XXXApplication 这个类中）启动应用，也可以直接在该工程的根目录下运行 `mvn spring-boot:run`，将会在控制台中看到启动日志：
 
-```
+```json
 2018-05-12 13:12:05.868  INFO 76572 --- [ost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'SpringMvcSofaTracerFilter' to urls: [/*]
 2018-05-12 13:12:06.543  INFO 76572 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/zipkin]}" onto public java.util.Map<java.lang.String, java.lang.Object> com.alipay.sofa.tracer.examples.zipkin.controller.SampleRestController.zipkin(java.lang.String)
 2018-05-12 13:12:07.164  INFO 76572 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8080 (http)
