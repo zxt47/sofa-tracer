@@ -17,15 +17,13 @@
 package com.alipay.sofa.tracer.plugins.springcloud.encodes;
 
 import com.alipay.common.tracer.core.appender.builder.JsonStringBuilder;
-import com.alipay.common.tracer.core.appender.self.Timestamp;
-import com.alipay.common.tracer.core.context.span.SofaTracerSpanContext;
+import com.alipay.common.tracer.core.appender.builder.XStringBuilder;
 import com.alipay.common.tracer.core.middleware.parent.AbstractDigestSpanEncoder;
 import com.alipay.common.tracer.core.span.CommonSpanTags;
 import com.alipay.common.tracer.core.span.SofaTracerSpan;
 import com.alipay.common.tracer.core.utils.StringUtils;
 import io.opentracing.tag.Tags;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -35,48 +33,28 @@ import java.util.Map;
 public class OpenFeignDigestJsonEncoder extends AbstractDigestSpanEncoder {
 
     @Override
-    public String encode(SofaTracerSpan span) throws IOException {
-        JsonStringBuilder result = new JsonStringBuilder();
-        //span end time
-        result.appendBegin(CommonSpanTags.TIME, Timestamp.format(span.getEndTime()));
-        appendSlot(result, span);
-        return result.toString();
-    }
+    protected void appendComponentSlot(XStringBuilder xsb, JsonStringBuilder jsb,
+                                       SofaTracerSpan span) {
 
-    private void appendSlot(JsonStringBuilder buffer, SofaTracerSpan sofaTracerSpan) {
-        SofaTracerSpanContext context = sofaTracerSpan.getSofaTracerSpanContext();
-        Map<String, String> tagStrMap = sofaTracerSpan.getTagsWithStr();
-        Map<String, Number> tagNumMap = sofaTracerSpan.getTagsWithNumber();
-        buffer.append(CommonSpanTags.LOCAL_APP, tagStrMap.get(CommonSpanTags.LOCAL_APP));
-        buffer.append(CommonSpanTags.TRACE_ID, context.getTraceId());
-        buffer.append(CommonSpanTags.SPAN_ID, context.getSpanId());
-        buffer.append(CommonSpanTags.REQUEST_URL, tagStrMap.get(CommonSpanTags.REQUEST_URL));
-        buffer.append(CommonSpanTags.METHOD, tagStrMap.get(CommonSpanTags.METHOD));
-        buffer.append(CommonSpanTags.RESULT_CODE, tagStrMap.get(CommonSpanTags.RESULT_CODE));
-        if (StringUtils.isNotBlank(tagStrMap.get(Tags.ERROR.getKey()))) {
-            buffer.append(Tags.ERROR.getKey(), tagStrMap.get(Tags.ERROR.getKey()));
+        Map<String, String> tagWithStr = span.getTagsWithStr();
+        Map<String, Number> tagWithNum = span.getTagsWithNumber();
+
+        jsb.append(CommonSpanTags.REQUEST_URL, tagWithStr.get(CommonSpanTags.REQUEST_URL));
+        jsb.append(CommonSpanTags.METHOD, tagWithStr.get(CommonSpanTags.METHOD));
+
+        if (StringUtils.isNotBlank(tagWithStr.get(Tags.ERROR.getKey()))) {
+            jsb.append(Tags.ERROR.getKey(), tagWithStr.get(Tags.ERROR.getKey()));
+        } else {
+            jsb.append(Tags.ERROR.getKey(), StringUtils.EMPTY_STRING);
         }
-        Number requestSize = tagNumMap.get(CommonSpanTags.REQ_SIZE);
-        buffer
-            .append(CommonSpanTags.REQ_SIZE, (requestSize == null ? 0L : requestSize.longValue()));
-        Number responseSize = tagNumMap.get(CommonSpanTags.RESP_SIZE);
-        buffer.append(CommonSpanTags.RESP_SIZE,
-            (responseSize == null ? 0L : responseSize.longValue()));
-        long duration = sofaTracerSpan.getEndTime() - sofaTracerSpan.getStartTime();
-        //time-consuming ms
-        buffer.append(CommonSpanTags.TIME_COST_MILLISECONDS, duration);
-        buffer.append(CommonSpanTags.CURRENT_THREAD_NAME,
-            tagStrMap.get(CommonSpanTags.CURRENT_THREAD_NAME));
-        //target appName
-        buffer.append(CommonSpanTags.REMOTE_HOST, tagStrMap.get(CommonSpanTags.REMOTE_HOST));
-        buffer.append(CommonSpanTags.REMOTE_PORT, tagStrMap.get(CommonSpanTags.REMOTE_PORT));
-        this.appendBaggage(buffer, context);
-    }
 
-    private void appendBaggage(JsonStringBuilder jsonStringBuilder,
-                               SofaTracerSpanContext sofaTracerSpanContext) {
-        //baggage
-        jsonStringBuilder.appendEnd(CommonSpanTags.BAGGAGE,
-            baggageSerialized(sofaTracerSpanContext));
+        Number requestSize = tagWithNum.get(CommonSpanTags.REQ_SIZE);
+        jsb.append(CommonSpanTags.REQ_SIZE, (requestSize == null ? 0L : requestSize.longValue()));
+        Number responseSize = tagWithNum.get(CommonSpanTags.RESP_SIZE);
+        jsb.append(CommonSpanTags.RESP_SIZE, (responseSize == null ? 0L : responseSize.longValue()));
+
+        //target appName
+        jsb.append(CommonSpanTags.REMOTE_HOST, tagWithStr.get(CommonSpanTags.REMOTE_HOST));
+        jsb.append(CommonSpanTags.REMOTE_PORT, tagWithStr.get(CommonSpanTags.REMOTE_PORT));
     }
 }
